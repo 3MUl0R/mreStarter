@@ -3,35 +3,61 @@
  * Licensed under the MIT License.
  */
 
-import { WebHost } from '@microsoft/mixed-reality-extension-sdk';
-import dotenv from 'dotenv';
-import { resolve as resolvePath } from 'path';
-import App from './app';
+import * as MRE from '@microsoft/mixed-reality-extension-sdk'
+import { resolve as resolvePath } from 'path'
+import dotenv from 'dotenv'
+import fs from 'fs'
 
-/* eslint-disable no-console */
-process.on('uncaughtException', err => console.log('uncaughtException', err));
-process.on('unhandledRejection', reason => console.log('unhandledRejection', reason));
-/* eslint-enable no-console */
+import App from './app'
+import DefaultEnv from './types'
+
+
+
+//if the .env configuration file doesn't exist create it using defaults
+if (!fs.existsSync('.env')) { 
+	const defaults = new DefaultEnv
+	let defaultString = ''
+	for (let key in defaults) {
+		if (Object.prototype.hasOwnProperty.call(defaults, key)) {
+			const value = defaults[key]
+			defaultString += `${key}=${value}\n`
+		}
+	}
+	fs.writeFileSync('.env', defaultString)
+	MRE.log.info('app', "created the default .env")
+}
 
 // Read .env if file exists
-dotenv.config();
+dotenv.config()
+
+/* eslint-disable no-console */
+process.on('uncaughtException', err => console.log('uncaughtException', err))
+process.on('unhandledRejection', reason => console.log('unhandledRejection', reason))
+/* eslint-enable no-console */
+
 
 // This function starts the MRE server. It will be called immediately unless
 // we detect that the code is running in a debuggable environment. If so, a
 // small delay is introduced allowing time for the debugger to attach before
 // the server starts accepting connections.
 function runApp() {
-	// Start listening for connections, and serve static files.
-	const server = new WebHost({
-		baseUrl: (process.env.BASE_URL),
-		baseDir: resolvePath(__dirname, '../public'),
-		port: (process.env.PORT)
-	});
+	//log that the app is starting
+	MRE.log.info('app', "starting server")
 
-	console.log("server info: ", server)
+	// Start listening for connections, and serve static files.
+	const server = new MRE.WebHost({
+		baseUrl: `${process.env.BASE_URL}:${parseInt(process.env.PORT)}`,
+		baseDir: resolvePath(__dirname, '../public'),
+		port: (process.env.PORT),
+		permissions: [MRE.Permissions.UserInteraction, MRE.Permissions.UserTracking]
+	})
+
+	MRE.log.info('app', "server started: ", server)
 
 	// Handle new application sessions
-	server.adapter.onConnection(context => new App(context, server.baseUrl));
+	server.adapter.onConnection((context, params) => {
+		new App(context, params)
+	})
 }
 
 // Check whether code is running in a debuggable watched filesystem
@@ -40,12 +66,12 @@ function runApp() {
 // The delay value below is in milliseconds so 1000 is a one second delay.
 // You may need to increase the delay or be able to decrease it depending
 // on the speed of your machine.
-const delay = 1000;
-const argv = process.execArgv.join();
-const isDebug = argv.includes('inspect') || argv.includes('debug');
+const delay = 1000
+const argv = process.execArgv.join()
+const isDebug = argv.includes('inspect') || argv.includes('debug')
 
 if (isDebug) {
-	setTimeout(runApp, delay);
+	setTimeout(runApp, delay)
 } else {
-	runApp();
+	runApp()
 }

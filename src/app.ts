@@ -15,18 +15,32 @@ export default class myApp{
     // Container for preloaded object prefabs.
 	private assets: MRE.AssetContainer
 	private prefabs: { [key: string]: MRE.Prefab } = {}
+	private userMap : Map<MRE.Guid, ''> = new Map()
 
     /**
 	 * Constructs a new instance of this class.
 	 * @param context The MRE SDK context.
-	 * @param baseUrl The baseUrl to this project's `./public` folder.
+	 * @param params Any url params that were received from the client connection.
 	 */
-	constructor(private context: MRE.Context, private baseUrl: string) {
+	constructor(private context: MRE.Context, private params:MRE.ParameterSet) {
         //initialize an assets container 
 		this.assets = new MRE.AssetContainer(context)
-		// Hook the context events we're interested in.
-		this.context.onStarted(() => this.started())
-		this.context.onUserLeft(user => this.userLeft(user))
+
+		//define actions for context events we're interested in
+		this.context.onStarted(() => {
+			this.started()
+			MRE.log.info('app', `App started for session ${this.context.sessionId}`)
+		})
+		
+		this.context.onUserJoined(user => {
+			this.userJoined(user)
+			MRE.log.info('app', `User joined session ${this.context.sessionId}`)
+		})
+
+		this.context.onUserLeft(user => {
+			this.userLeft(user)
+			MRE.log.info('app', `User left session ${this.context.sessionId}`)
+		})
 	}
 
 
@@ -57,19 +71,32 @@ export default class myApp{
     // use () => {} syntax here to get proper scope binding when called via setTimeout()
 	// if async is required, next line becomes private startedImpl = async () => {
 	private startedImpl = async () => {
-		
         //do startup work here such as preloading objects or showing a menu
         this.showHello()
     }
-    
-
-    /**
+    	
+	/**
 	 * Called when a user leaves the application 
 	 * @param user The user that bailed
 	 */
-	private userLeft(user: MRE.User) {
-
-    }
+	private userLeft(user: MRE.User){
+		//when the last person leaves perform cleanup
+		if (this.userMap.size == 0){
+			MRE.log.info('app', `Last user left. Shutting down ${this.context.sessionId}`)
+		}
+	}
+	
+	/**
+	 * call when a user joins the application
+	 * @param user 
+	 */
+	private userJoined(user: MRE.User){
+		//if the user is a moderator add them to the group mask
+		//this allows them to see all controls for that group
+		if (user.properties['altspacevr-roles'].includes('moderator')){ 
+			user.groups.set(['moderator'])
+		}
+	}
     
 
     /**

@@ -27,10 +27,10 @@
     "ignore": [".git", "node_modules/**/node_modules"],
     "verbose": true,
     "exec": "tsc --build && node .",
-    "watch": ["src/"],
+    "watch": ["src/", "public/"],
     "env": {
         "NODE_ENV": "development"
     },
-    "ext": "js,json,ts"
+    "ext": "*"
   }
 }
