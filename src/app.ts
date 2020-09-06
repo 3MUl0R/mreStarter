@@ -13,10 +13,12 @@ import DefaultEnv from './types'
  */
 export default class myApp{
 
-    // Container for preloaded object prefabs.
+    /**container for major app assets */
 	private assets: MRE.AssetContainer
+	/**container for major app prefabs */
 	private prefabs: { [key: string]: MRE.Prefab } = {}
-	private userMap : Map<MRE.Guid, ''> = new Map()
+	/**use to save player info */
+	private userMap : Map<MRE.Guid, string> = new Map()
 
     /**
 	 * Constructs a new instance of this class.
@@ -30,17 +32,18 @@ export default class myApp{
 		//define actions for context events we're interested in
 		this.context.onStarted(() => {
 			this.started()
-			MRE.log.info('app', `App started for session ${this.context.sessionId}`)
 		})
 		
 		this.context.onUserJoined(user => {
 			this.userJoined(user)
-			MRE.log.info('app', `User joined session ${this.context.sessionId}`)
 		})
 
 		this.context.onUserLeft(user => {
 			this.userLeft(user)
-			MRE.log.info('app', `User left session ${this.context.sessionId}`)
+		})
+
+		this.context.onStopped(() => {
+			this.stopped()
 		})
 	}
 
@@ -49,7 +52,9 @@ export default class myApp{
 	 * Called when an application session starts up.
 	 */
 	private async started(){
-        // Check whether code is running in a debuggable watched filesystem
+		MRE.log.info('app', `App started for session ${this.context.sessionId}`)
+
+		// Check whether code is running in a debuggable watched filesystem
 		// environment and if so delay starting the app by 1 second to give
 		// the debugger time to detect that the server has restarted and reconnect.
 		// The delay value below is in milliseconds so 1000 is a one second delay.
@@ -81,10 +86,7 @@ export default class myApp{
 	 * @param user The user that bailed
 	 */
 	private userLeft(user: MRE.User){
-		//when the last person leaves perform cleanup
-		if (this.userMap.size == 0){
-			MRE.log.info('app', `Last user left. Shutting down ${this.context.sessionId}`)
-		}
+		MRE.log.info('app', `User left: ${this.context.sessionId}`)
 	}
 	
 	/**
@@ -92,11 +94,21 @@ export default class myApp{
 	 * @param user 
 	 */
 	private userJoined(user: MRE.User){
+		MRE.log.info('app', `User Joined: ${this.context.sessionId}`)
+
 		//if the user is a moderator add them to the group mask
 		//this allows them to see all controls for that group
 		if (user.properties['altspacevr-roles'].includes('moderator')){ 
 			user.groups.set(['moderator'])
 		}
+	}
+
+	/**
+	 * call when stopping the application
+	 */
+	private stopped(){
+		MRE.log.info('app', `Stopping session ${this.context.sessionId}`)
+		//perform cleanup here, such as shutting down any sub processes
 	}
     
 
