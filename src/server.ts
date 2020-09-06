@@ -27,8 +27,12 @@ if (!fs.existsSync('.env')) {
 	MRE.log.info('app', "created the default .env")
 }
 
-// Read .env if file exists
+
+//Read .env
 dotenv.config()
+//create env vars that can be used with auto completion
+const env = new DefaultEnv(process.env as DefaultEnv)
+
 
 /* eslint-disable no-console */
 process.on('uncaughtException', err => console.log('uncaughtException', err))
@@ -46,9 +50,9 @@ function runApp() {
 
 	// Start listening for connections, and serve static files.
 	const server = new MRE.WebHost({
-		baseUrl: `${process.env.BASE_URL}:${parseInt(process.env.PORT)}`,
+		baseUrl: `${env.BASE_URL}:${parseInt(env.PORT)}`,
 		baseDir: resolvePath(__dirname, '../public'),
-		port: (process.env.PORT),
+		port: (env.PORT),
 		permissions: [MRE.Permissions.UserInteraction, MRE.Permissions.UserTracking]
 	})
 
@@ -56,7 +60,7 @@ function runApp() {
 
 	// Handle new application sessions
 	server.adapter.onConnection((context, params) => {
-		new App(context, params)
+		new App(env, context, params)
 	})
 }
 

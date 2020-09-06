@@ -4,6 +4,7 @@
  */
 
 import * as MRE from '@microsoft/mixed-reality-extension-sdk'
+import DefaultEnv from './types'
 
 
 
@@ -22,7 +23,7 @@ export default class myApp{
 	 * @param context The MRE SDK context.
 	 * @param params Any url params that were received from the client connection.
 	 */
-	constructor(private context: MRE.Context, private params:MRE.ParameterSet) {
+	constructor(private env: DefaultEnv, private context: MRE.Context, private params:MRE.ParameterSet) {
         //initialize an assets container 
 		this.assets = new MRE.AssetContainer(context)
 
